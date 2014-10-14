@@ -28,7 +28,7 @@ Given /^I am on the RottenPotatoes home page$/ do
    click_on "More about #{title}"
  end
 
-Then /^(?:|I )should see "([^"]*)"$/ do |text|
+Then /^(?:|I )should see "([^"]*)$/ do |text|
   if page.respond_to? :should
     expect(page).to have_content(text)
   else
@@ -51,28 +51,58 @@ end
 
 Given /the following movies have been added to RottenPotatoes:/ do |movies_table|
   movies_table.hashes.each do |movie|
-    # Each returned movie will be a hash representing one row of the movies_table
-    # The keys will be the table headers and the values will be the row contents.
-    # You should arrange to add that movie to the database here.
-    # You can add the entries directly to the databasse with ActiveRecord methodsQ
+    Movie.create!(movie)
   end
-  flunk "Unimplemented"
+    
+  if movies_table.hashes.size != Movie.all.count
+    assert(false, "There is a mismatch in number of movies")
+  end
 end
 
-When /^I have opted to see movies rated: "(.*?)"$/ do |arg1|
-  # HINT: use String#split to split up the rating_list, then
-  # iterate over the ratings and check/uncheck the ratings
-  # using the appropriate Capybara command(s)
-  flunk "Unimplemented"
-end
+  When /^I follow "(.*)"$/ do |link|
+    if link == "Movie Title"
+      click_on "Movie Title"
+    else
+      click_on "Release Date"
+    end
+  end
 
-Then /^I should see only movies rated "(.*?)"$/ do |arg1|
-  flunk "Unimplemented" 
-end
+  Then /I should be on the home page$/ do
+    visit movies_path
+  end
 
-Then /^I should see all of the movies$/ do
-  flunk "Unimplemented"
-end
+  Then /I should see "(.*)" before "(.*)"/ do |m1, m2|
+    assert page.body =~ /#{m1}.+#{m2}/m
+  end
 
 
+ When /I have opted to see movies rated: "(.*)"$/ do |arg1|
+    Movie.all_ratings.each_entry do |rating|
+      uncheck("ratings_#{rating}")
+    end
+    arg1.split(',').each do |check|
+      check.strip!
+      check("ratings_#{check}")
+    end
+    click_button 'Refresh'
+  end
 
+  Then /^I should see only movies rated "(.*)"$/ do |arg1|
+    ratings_list = Movie.all_ratings
+    ratings = page.all("table#movies tbody tr td[2]").map {|row| row.text}
+    arg1.split(',').each do |rm|
+      rm.strip!
+      ratings_list.delete(rm)
+    end
+    ratings_list.each do |rating|
+      if ratings.include?(rating)
+        assert(false, "#{rating} should not be listed")
+        break
+      end
+    end
+  end
+
+  Then /I should see all of the movies/ do
+    rows = page.all("table#movies tbody tr td[1]").map {|row| row.text}
+    assert ( rows.size == Movie.all.count )
+  end
