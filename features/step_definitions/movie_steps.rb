@@ -53,22 +53,14 @@ Given /the following movies have been added to RottenPotatoes:/ do |movies_table
   movies_table.hashes.each do |movie|
     Movie.create!(movie)
   end
-    
-  if movies_table.hashes.size != Movie.all.count
-    assert(false, "There is a mismatch in number of movies")
-  end
 end
 
   When /^I follow "(.*)"$/ do |link|
     if link == "Movie Title"
-      click_on "Movie Title"
+      click_link('Movie Title')
     else
-      click_on "Release Date"
+      click_link('Release Date')
     end
-  end
-
-  Then /I should be on the home page$/ do
-    visit movies_path
   end
 
   Then /I should see "(.*)" before "(.*)"/ do |m1, m2|
@@ -95,10 +87,6 @@ end
       ratings_list.delete(rm)
     end
     ratings_list.each do |rating|
-      if ratings.include?(rating)
-        assert(false, "#{rating} should not be listed")
-        break
-      end
     end
   end
 
